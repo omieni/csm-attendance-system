@@ -21,9 +21,8 @@ CSM (Computer Science & Mathematics) Attendance System is a Python-based applica
 │   │   ├── csm-logo.png
 │   │   └── Fonts/
 │   │       └── Inter/
-│   │           └── static/
-│   │               ├── Inter_18pt-Bold.ttf
-│   │               └── Inter_18pt-Regular.ttf
+│   │           ├── Inter_18pt-Bold.ttf
+│   │           └── Inter_18pt-Regular.ttf
 │   ├── main.py                     # Main application script
 │   ├── test_database.csv           # Sample user database
 │   └── attendance_log_YYYYMMDD_HHMMSS.csv # Generated attendance logs

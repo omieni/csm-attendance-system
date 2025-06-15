@@ -93,7 +93,9 @@ USER003,Charlie Brown,student
 ## 5. Prepare Assets
 
 - Ensure the CSM logo is present at `src/assets/csm-logo.png`.
-- Ensure the Inter font file is present at `src/assets/Inter/Inter-VariableFont_opsz,wght.ttf`.
+- Ensure the Inter font files are present at:
+  - `src/assets/Fonts/Inter/Inter_18pt-Bold.ttf`
+  - `src/assets/Fonts/Inter/Inter_18pt-Regular.ttf`
 
 ## 6. Running the Application
 
@@ -116,8 +118,8 @@ The application window should appear, displaying the webcam feed and the attenda
     - Ensure your webcam is properly connected and drivers are installed.
     - If you have multiple cameras, OpenCV might default to the wrong one. You might need to change `cv2.VideoCapture(0)` in `main.py` to `cv2.VideoCapture(1)` (or another index).
 - **Font Issues:**
-    - If the Inter font doesn't load, the application will attempt to use system fallbacks (Segoe UI, Arial, etc.). Check the console output for messages related to font loading.
-    - Ensure the path `src/assets/Inter/Inter-VariableFont_opsz,wght.ttf` is correct.
+    - If the Inter fonts don't load, check the console output for error messages.
+    - Ensure the paths `src/assets/Fonts/Inter/Inter_18pt-Bold.ttf` and `src/assets/Fonts/Inter/Inter_18pt-Regular.ttf` are correct and the files exist.
 - **Module Not Found Errors:** 
     - Make sure your virtual environment is activated (`(venv)` should be in your prompt).
     - Ensure all packages from `requirements.txt` were installed successfully.

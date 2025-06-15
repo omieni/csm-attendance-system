@@ -45,6 +45,10 @@ CSM_LOGO_PATH = "assets/csm-logo.png"
 # Logo cache
 csm_logo_pil = None
 
+# Font paths - Inter fonts only
+INTER_BOLD_PATH = "src/assets/Fonts/Inter/Inter_18pt-Bold.ttf"
+INTER_REGULAR_PATH = "src/assets/Fonts/Inter/Inter_18pt-Regular.ttf"
+
 # Pre-loaded fonts
 TITLE_FONT = None
 SUBTITLE_FONT = None
@@ -58,47 +62,16 @@ QR_TEXT_FONT = None
 # -----------------------------
 # 3) FONT MANAGEMENT
 # -----------------------------
-def get_system_font(size, bold=False):
-    """Get a system font, prioritizing common Windows fonts."""
-    # This print statement will now only appear when fonts are initially loaded
-    print(f"[INFO] Attempting to load system font (size: {size}, bold: {bold}).")
-
-    # System-font fallbacks, prioritizing Windows fonts
-    candidates = []
-    if bold:
-        candidates.append("C:/Windows/Fonts/segoeuib.ttf") # Segoe UI Bold
-        candidates.append("C:/Windows/Fonts/seguibld.ttf") # Segoe UI Bold (alternative name)
-        candidates.append("C:/Windows/Fonts/arialbd.ttf")  # Arial Bold
-    else:
-        candidates.append("C:/Windows/Fonts/segoeui.ttf")  # Segoe UI Regular
-        candidates.append("C:/Windows/Fonts/arial.ttf")   # Arial Regular
+def load_inter_font(bold=False):
+    """Load Inter font from specified paths only."""
+    font_path = INTER_BOLD_PATH if bold else INTER_REGULAR_PATH
     
-    # Common cross-platform fallbacks if Windows fonts are not found
-    candidates += [
-        "C:/Windows/Fonts/verdana.ttf",
-        "C:/Windows/Fonts/tahoma.ttf",
-        "/System/Library/Fonts/Helvetica.ttc", # macOS
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", # Linux
-    ]
-
-    for fp in candidates:
-        if os.path.isfile(fp):
-            try:
-                font = ImageFont.truetype(fp, size)
-                print(f"[INFO] Loaded system font: {fp}")
-                return font
-            except Exception as e:
-                print(f"[DEBUG] Failed to load {fp}: {e}")
-                continue
-    
-    print("[WARNING] No suitable system font found. Falling back to PIL default font.")
-    # Last resort: built-in default
     try:
-        font = ImageFont.load_default()
-        print("[INFO] Using PIL default font as ultimate fallback.")
+        font = ImageFont.truetype(font_path, 18)
+        print(f"[INFO] Loaded Inter font: {font_path}")
         return font
-    except Exception as e_default_font:
-        print(f"[ERROR] Failed to load PIL default font: {e_default_font}. No font available.")
+    except Exception as e:
+        print(f"[ERROR] Failed to load Inter font {font_path}: {e}")
         return None
 
 # -----------------------------
@@ -129,14 +102,6 @@ def create_high_quality_panel(width, height):
     # Header
     header_height = 140
     draw.rectangle([0, 0, width, header_height], fill=CSM_PRIMARY_COLOR_RGB)
-    
-    # Use pre-loaded fonts
-    # title_font = get_system_font(28, bold=True)
-    # subtitle_font = get_system_font(24)
-    # header_font = get_system_font(16, bold=True)
-    # entry_font = get_system_font(18)
-    # role_font = get_system_font(16)
-    # footer_font = get_system_font(14)
     
     # Add logo and title
     text_x = 10
@@ -216,7 +181,6 @@ def draw_welcome_message(frame, message):
     welcome_img = Image.new('RGBA', (frame_w, bg_height), (*CSM_PRIMARY_COLOR_RGB, 255))
     draw = ImageDraw.Draw(welcome_img)
     
-    # font = get_system_font(32, bold=True) # Use pre-loaded font
     bbox = draw.textbbox((0, 0), message, font=WELCOME_FONT)
     text_width = bbox[2] - bbox[0]
     text_height = bbox[3] - bbox[1]
@@ -248,7 +212,6 @@ def decode_qr_codes(frame):
         # Draw QR text with PIL for better quality
         text_img = Image.new('RGBA', (w + 40, 30), (0, 0, 0, 0))
         text_draw = ImageDraw.Draw(text_img)
-        # text_font = get_system_font(16, bold=True) # Use pre-loaded font
         text_draw.text((5, 5), qr_text, font=QR_TEXT_FONT, fill=(0, 255, 0))
         
         text_cv = cv2.cvtColor(np.array(text_img), cv2.COLOR_RGBA2BGR)
@@ -343,17 +306,17 @@ def main():
     # Initialize
     load_logo()
     
-    # Load fonts once
-    print("[INFO] Pre-loading application fonts...")
-    TITLE_FONT = get_system_font(28, bold=True)
-    SUBTITLE_FONT = get_system_font(24)
-    HEADER_FONT = get_system_font(16, bold=True)
-    ENTRY_FONT = get_system_font(18)
-    ROLE_FONT = get_system_font(16)
-    FOOTER_FONT = get_system_font(14)
-    WELCOME_FONT = get_system_font(32, bold=True)
-    QR_TEXT_FONT = get_system_font(16, bold=True)
-    print("[INFO] All fonts loaded.")
+    # Load Inter fonts only
+    print("[INFO] Loading Inter fonts...")
+    TITLE_FONT = load_inter_font(bold=True)
+    SUBTITLE_FONT = load_inter_font(bold=True)
+    HEADER_FONT = load_inter_font(bold=True)
+    ENTRY_FONT = load_inter_font(bold=False)
+    ROLE_FONT = load_inter_font(bold=False)
+    FOOTER_FONT = load_inter_font(bold=False)
+    WELCOME_FONT = load_inter_font(bold=True)
+    QR_TEXT_FONT = load_inter_font(bold=True)
+    print("[INFO] Inter fonts loaded.")
 
     print(f"[INFO] CSM Attendance System - Session started at: {session_start.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"[INFO] Creating attendance log: {LOG_CSV}")
@@ -382,7 +345,6 @@ def main():
     cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     print("[INFO] System started. Press 'f' for fullscreen, 'q' to quit")
-    # print("[INFO] Using Inter font with PIL for high-quality text rendering") # This line is less relevant now
 
     # Main loop
     while True:
@@ -404,6 +366,36 @@ def main():
         elif current_time - welcome_timer >= WELCOME_DURATION:
             welcome_message = ""
 
+        # Create combined display
+        panel = build_attendance_panel(panel_w, frame_h)
+        combined = np.zeros((frame_h, frame_w + panel_w, 3), dtype=np.uint8)
+        combined[0:frame_h, 0:frame_w] = frame
+        combined[0:frame_h, frame_w:frame_w + panel_w] = panel
+
+        cv2.imshow(window_name, combined)
+
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord("q"):
+            break
+        elif key == ord("f"):
+            cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+    # Cleanup
+    session_end = datetime.now()
+    session_duration = session_end - session_start
+
+    with open(LOG_CSV, 'a') as f:
+        f.write(f"# Session ended: {session_end.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"# Session duration: {session_duration}\n")
+        f.write(f"# Total entries: {len(attendance_sessions)}\n")
+
+    cap.release()
+    cv2.destroyAllWindows()
+    print(f"[INFO] CSM Attendance System - Session ended")
+    print(f"[INFO] Attendance log saved to: {LOG_CSV}")
+
+if __name__ == "__main__":
+    main()
         # Create combined display
         panel = build_attendance_panel(panel_w, frame_h)
         combined = np.zeros((frame_h, frame_w + panel_w, 3), dtype=np.uint8)
