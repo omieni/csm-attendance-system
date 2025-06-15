@@ -45,60 +45,61 @@ CSM_LOGO_PATH = "assets/csm-logo.png"
 # Logo cache
 csm_logo_pil = None
 
+# Pre-loaded fonts
+TITLE_FONT = None
+SUBTITLE_FONT = None
+HEADER_FONT = None
+ENTRY_FONT = None
+ROLE_FONT = None
+FOOTER_FONT = None
+WELCOME_FONT = None
+QR_TEXT_FONT = None
+
 # -----------------------------
 # 3) FONT MANAGEMENT
 # -----------------------------
 def get_system_font(size, bold=False):
-    """Get Inter font with system font fallbacks for better text rendering."""
-    # Use relative path for Inter font
-    inter_font_path = os.path.join("assets", "Inter", "Inter-VariableFont_opsz,wght.ttf")
-    
-    try:
-        target_weight = 700 if bold else 400
-        font = ImageFont.truetype(inter_font_path, size, font_variations=[('wght', target_weight)])
-        return font
-    except IOError:
-        print(f"[INFO] Inter font not found at '{inter_font_path}'. Falling back to system fonts.")
-    except AttributeError:
-        print(f"[WARNING] Pillow version doesn't support font_variations. Trying Inter without variations.")
-        try:
-            font = ImageFont.truetype(inter_font_path, size)
-            return font
-        except Exception:
-            pass
-    except Exception as e:
-        print(f"[WARNING] Could not load Inter font: {e}. Falling back to system fonts.")
+    """Get a system font, prioritizing common Windows fonts."""
+    # This print statement will now only appear when fonts are initially loaded
+    print(f"[INFO] Attempting to load system font (size: {size}, bold: {bold}).")
 
-    # System font fallbacks
-    system_fonts = []
+    # System-font fallbacks, prioritizing Windows fonts
+    candidates = []
     if bold:
-        system_fonts.extend([
-            "C:/Windows/Fonts/segoeuib.ttf",  # Segoe UI Bold
-            "C:/Windows/Fonts/arialbd.ttf",   # Arial Bold
-        ])
+        candidates.append("C:/Windows/Fonts/segoeuib.ttf") # Segoe UI Bold
+        candidates.append("C:/Windows/Fonts/seguibld.ttf") # Segoe UI Bold (alternative name)
+        candidates.append("C:/Windows/Fonts/arialbd.ttf")  # Arial Bold
+    else:
+        candidates.append("C:/Windows/Fonts/segoeui.ttf")  # Segoe UI Regular
+        candidates.append("C:/Windows/Fonts/arial.ttf")   # Arial Regular
     
-    system_fonts.extend([
-        "C:/Windows/Fonts/segoeui.ttf",   # Segoe UI Regular
-        "C:/Windows/Fonts/arial.ttf",     # Arial Regular
-        "/System/Library/Fonts/Helvetica.ttc",  # macOS
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux
-    ])
-    
-    for font_path in system_fonts:
-        try:
-            return ImageFont.truetype(font_path, size)
-        except (IOError, Exception):
-            continue
+    # Common cross-platform fallbacks if Windows fonts are not found
+    candidates += [
+        "C:/Windows/Fonts/verdana.ttf",
+        "C:/Windows/Fonts/tahoma.ttf",
+        "/System/Library/Fonts/Helvetica.ttc", # macOS
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", # Linux
+    ]
 
-    # Ultimate fallback
+    for fp in candidates:
+        if os.path.isfile(fp):
+            try:
+                font = ImageFont.truetype(fp, size)
+                print(f"[INFO] Loaded system font: {fp}")
+                return font
+            except Exception as e:
+                print(f"[DEBUG] Failed to load {fp}: {e}")
+                continue
+    
+    print("[WARNING] No suitable system font found. Falling back to PIL default font.")
+    # Last resort: built-in default
     try:
-        return ImageFont.truetype("arial.ttf", size)
-    except IOError:
-        print("[WARNING] Arial font not found. Using Pillow default font.")
-        try:
-            return ImageFont.load_default(size=size)
-        except TypeError:
-            return ImageFont.load_default()
+        font = ImageFont.load_default()
+        print("[INFO] Using PIL default font as ultimate fallback.")
+        return font
+    except Exception as e_default_font:
+        print(f"[ERROR] Failed to load PIL default font: {e_default_font}. No font available.")
+        return None
 
 # -----------------------------
 # 4) LOGO MANAGEMENT
@@ -129,13 +130,13 @@ def create_high_quality_panel(width, height):
     header_height = 140
     draw.rectangle([0, 0, width, header_height], fill=CSM_PRIMARY_COLOR_RGB)
     
-    # Load fonts
-    title_font = get_system_font(28, bold=True)
-    subtitle_font = get_system_font(24)
-    header_font = get_system_font(16, bold=True)
-    entry_font = get_system_font(18)
-    role_font = get_system_font(16)
-    footer_font = get_system_font(14)
+    # Use pre-loaded fonts
+    # title_font = get_system_font(28, bold=True)
+    # subtitle_font = get_system_font(24)
+    # header_font = get_system_font(16, bold=True)
+    # entry_font = get_system_font(18)
+    # role_font = get_system_font(16)
+    # footer_font = get_system_font(14)
     
     # Add logo and title
     text_x = 10
@@ -144,8 +145,8 @@ def create_high_quality_panel(width, height):
         panel.paste(csm_logo_pil, (logo_x, logo_y), csm_logo_pil)
         text_x = logo_x + csm_logo_pil.width + 20
     
-    draw.text((text_x, 25), "CSM ATTENDANCE", font=title_font, fill=(255, 255, 255))
-    draw.text((text_x, 60), "SYSTEM", font=subtitle_font, fill=(255, 255, 255))
+    draw.text((text_x, 25), "CSM ATTENDANCE", font=TITLE_FONT, fill=(255, 255, 255))
+    draw.text((text_x, 60), "SYSTEM", font=SUBTITLE_FONT, fill=(255, 255, 255))
     
     # Column headers
     time_col_x = 10
@@ -153,9 +154,9 @@ def create_high_quality_panel(width, height):
     name_role_col_x = 150
     header_y = header_height + 15
     
-    draw.text((time_col_x, header_y), "TIME", font=header_font, fill=CSM_PRIMARY_COLOR_RGB)
-    draw.text((status_col_x, header_y), "STATUS", font=header_font, fill=CSM_PRIMARY_COLOR_RGB)
-    draw.text((name_role_col_x, header_y), "NAME (ROLE)", font=header_font, fill=CSM_PRIMARY_COLOR_RGB)
+    draw.text((time_col_x, header_y), "TIME", font=HEADER_FONT, fill=CSM_PRIMARY_COLOR_RGB)
+    draw.text((status_col_x, header_y), "STATUS", font=HEADER_FONT, fill=CSM_PRIMARY_COLOR_RGB)
+    draw.text((name_role_col_x, header_y), "NAME (ROLE)", font=HEADER_FONT, fill=CSM_PRIMARY_COLOR_RGB)
     
     # Separator line
     line_y = header_y + 30
@@ -179,22 +180,22 @@ def create_high_quality_panel(width, height):
         role_text = f"({entry['role'].upper()})"
         
         # Draw entry data
-        draw.text((time_col_x, y_offset), time_text, font=entry_font, fill=(0, 0, 0))
-        draw.text((status_col_x, y_offset), status_text, font=entry_font, fill=status_color)
-        draw.text((name_role_col_x, y_offset), name_text, font=entry_font, fill=(0, 0, 0))
+        draw.text((time_col_x, y_offset), time_text, font=ENTRY_FONT, fill=(0, 0, 0))
+        draw.text((status_col_x, y_offset), status_text, font=ENTRY_FONT, fill=status_color)
+        draw.text((name_role_col_x, y_offset), name_text, font=ENTRY_FONT, fill=(0, 0, 0))
         
         # Role with spacing
-        name_bbox = draw.textbbox((0, 0), name_text, font=entry_font)
+        name_bbox = draw.textbbox((0, 0), name_text, font=ENTRY_FONT)
         name_width = name_bbox[2] - name_bbox[0]
         role_x = name_role_col_x + name_width + 10
-        draw.text((role_x, y_offset), role_text, font=role_font, fill=role_color)
+        draw.text((role_x, y_offset), role_text, font=ROLE_FONT, fill=role_color)
         
         y_offset += line_height
     
     # Footer
     footer_y = height - 25
     footer_text = f"Session: {session_start.strftime('%Y-%m-%d')}"
-    draw.text((10, footer_y), footer_text, font=footer_font, fill=CSM_PRIMARY_COLOR_RGB)
+    draw.text((10, footer_y), footer_text, font=FOOTER_FONT, fill=CSM_PRIMARY_COLOR_RGB)
     
     return panel
 
@@ -215,15 +216,15 @@ def draw_welcome_message(frame, message):
     welcome_img = Image.new('RGBA', (frame_w, bg_height), (*CSM_PRIMARY_COLOR_RGB, 255))
     draw = ImageDraw.Draw(welcome_img)
     
-    font = get_system_font(32, bold=True)
-    bbox = draw.textbbox((0, 0), message, font=font)
+    # font = get_system_font(32, bold=True) # Use pre-loaded font
+    bbox = draw.textbbox((0, 0), message, font=WELCOME_FONT)
     text_width = bbox[2] - bbox[0]
     text_height = bbox[3] - bbox[1]
     
     text_x = (frame_w - text_width) // 2
     text_y = (bg_height - text_height) // 2
     
-    draw.text((text_x, text_y), message, font=font, fill=(255, 255, 255))
+    draw.text((text_x, text_y), message, font=WELCOME_FONT, fill=(255, 255, 255))
     
     welcome_cv = cv2.cvtColor(np.array(welcome_img), cv2.COLOR_RGBA2BGR)
     frame[frame_h - bg_height:frame_h, 0:frame_w] = welcome_cv
@@ -247,8 +248,8 @@ def decode_qr_codes(frame):
         # Draw QR text with PIL for better quality
         text_img = Image.new('RGBA', (w + 40, 30), (0, 0, 0, 0))
         text_draw = ImageDraw.Draw(text_img)
-        text_font = get_system_font(16, bold=True)
-        text_draw.text((5, 5), qr_text, font=text_font, fill=(0, 255, 0))
+        # text_font = get_system_font(16, bold=True) # Use pre-loaded font
+        text_draw.text((5, 5), qr_text, font=QR_TEXT_FONT, fill=(0, 255, 0))
         
         text_cv = cv2.cvtColor(np.array(text_img), cv2.COLOR_RGBA2BGR)
         overlay_y = max(0, y - 35)
@@ -337,9 +338,23 @@ def export_to_csv(entry):
 # -----------------------------
 def main():
     global welcome_message, welcome_timer
+    global TITLE_FONT, SUBTITLE_FONT, HEADER_FONT, ENTRY_FONT, ROLE_FONT, FOOTER_FONT, WELCOME_FONT, QR_TEXT_FONT
 
     # Initialize
     load_logo()
+    
+    # Load fonts once
+    print("[INFO] Pre-loading application fonts...")
+    TITLE_FONT = get_system_font(28, bold=True)
+    SUBTITLE_FONT = get_system_font(24)
+    HEADER_FONT = get_system_font(16, bold=True)
+    ENTRY_FONT = get_system_font(18)
+    ROLE_FONT = get_system_font(16)
+    FOOTER_FONT = get_system_font(14)
+    WELCOME_FONT = get_system_font(32, bold=True)
+    QR_TEXT_FONT = get_system_font(16, bold=True)
+    print("[INFO] All fonts loaded.")
+
     print(f"[INFO] CSM Attendance System - Session started at: {session_start.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"[INFO] Creating attendance log: {LOG_CSV}")
 
@@ -367,7 +382,7 @@ def main():
     cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     print("[INFO] System started. Press 'f' for fullscreen, 'q' to quit")
-    print("[INFO] Using Inter font with PIL for high-quality text rendering")
+    # print("[INFO] Using Inter font with PIL for high-quality text rendering") # This line is less relevant now
 
     # Main loop
     while True:
