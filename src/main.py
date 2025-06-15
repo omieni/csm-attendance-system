@@ -46,8 +46,8 @@ CSM_LOGO_PATH = "assets/csm-logo.png"
 csm_logo_pil = None
 
 # Font paths - Inter fonts only
-INTER_BOLD_PATH = "src/assets/Fonts/Inter/Inter_18pt-Bold.ttf"
-INTER_REGULAR_PATH = "src/assets/Fonts/Inter/Inter_18pt-Regular.ttf"
+INTER_BOLD_PATH = "assets/Fonts/Inter/Inter_18pt-Bold.ttf"
+INTER_REGULAR_PATH = "assets/Fonts/Inter/Inter_18pt-Regular.ttf"
 
 # Pre-loaded fonts
 TITLE_FONT = None
@@ -366,36 +366,6 @@ def main():
         elif current_time - welcome_timer >= WELCOME_DURATION:
             welcome_message = ""
 
-        # Create combined display
-        panel = build_attendance_panel(panel_w, frame_h)
-        combined = np.zeros((frame_h, frame_w + panel_w, 3), dtype=np.uint8)
-        combined[0:frame_h, 0:frame_w] = frame
-        combined[0:frame_h, frame_w:frame_w + panel_w] = panel
-
-        cv2.imshow(window_name, combined)
-
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord("q"):
-            break
-        elif key == ord("f"):
-            cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-
-    # Cleanup
-    session_end = datetime.now()
-    session_duration = session_end - session_start
-
-    with open(LOG_CSV, 'a') as f:
-        f.write(f"# Session ended: {session_end.strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(f"# Session duration: {session_duration}\n")
-        f.write(f"# Total entries: {len(attendance_sessions)}\n")
-
-    cap.release()
-    cv2.destroyAllWindows()
-    print(f"[INFO] CSM Attendance System - Session ended")
-    print(f"[INFO] Attendance log saved to: {LOG_CSV}")
-
-if __name__ == "__main__":
-    main()
         # Create combined display
         panel = build_attendance_panel(panel_w, frame_h)
         combined = np.zeros((frame_h, frame_w + panel_w, 3), dtype=np.uint8)
