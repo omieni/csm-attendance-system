@@ -6,6 +6,7 @@ import time
 import os
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+import pygame
 
 # -----------------------------
 # 1) LOAD "DATABASE" (test_database.csv)
@@ -41,6 +42,10 @@ WELCOME_DURATION = 3.0
 CSM_PRIMARY_COLOR = (40, 31, 140)  # BGR format for OpenCV
 CSM_PRIMARY_COLOR_RGB = (140, 31, 40)  # RGB format for PIL
 CSM_LOGO_PATH = "assets/csm-logo.png"
+
+# Sound configuration
+BEEP_SOUND_PATH = "assets/Beep.mp3"
+beep_sound = None
 
 # Logo cache
 csm_logo_pil = None
@@ -90,6 +95,36 @@ def load_logo():
     except Exception as e:
         print(f"[WARNING] Error loading logo: {e}")
         csm_logo_pil = None
+
+# -----------------------------
+# 4.5) SOUND MANAGEMENT
+# -----------------------------
+def initialize_sound():
+    """Initialize pygame mixer and load beep sound"""
+    global beep_sound
+    try:
+        pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
+        beep_sound = pygame.mixer.Sound(BEEP_SOUND_PATH)
+        print(f"[INFO] Sound system initialized. Beep sound loaded from: {BEEP_SOUND_PATH}")
+        return True
+    except pygame.error as e:
+        print(f"[WARNING] Failed to initialize sound system: {e}")
+        return False
+    except FileNotFoundError:
+        print(f"[WARNING] Beep sound file not found: {BEEP_SOUND_PATH}")
+        return False
+    except Exception as e:
+        print(f"[WARNING] Unexpected error loading sound: {e}")
+        return False
+
+def play_beep():
+    """Play beep sound if available"""
+    global beep_sound
+    try:
+        if beep_sound is not None:
+            beep_sound.play()
+    except Exception as e:
+        print(f"[WARNING] Failed to play beep sound: {e}")
 
 # -----------------------------
 # 5) UI PANEL CREATION
@@ -243,7 +278,12 @@ def mark_time(qr_data: str):
 
     if qr_data not in user_lookup:
         print(f"[WARNING] Unknown ID: {qr_data}")
+        # Play beep even for unknown IDs to indicate scan was detected
+        play_beep()
         return
+
+    # Play beep sound on successful scan
+    play_beep()
 
     info = user_lookup[qr_data]
     now = datetime.now()
@@ -305,6 +345,7 @@ def main():
 
     # Initialize
     load_logo()
+    initialize_sound()
     
     # Load Inter fonts only
     print("[INFO] Loading Inter fonts...")
@@ -391,6 +432,13 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
+    
+    # Clean up sound system
+    try:
+        pygame.mixer.quit()
+    except:
+        pass
+    
     print(f"[INFO] CSM Attendance System - Session ended")
     print(f"[INFO] Attendance log saved to: {LOG_CSV}")
 
